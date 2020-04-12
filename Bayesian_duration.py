@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from .Baseline import WhittakerSmooth
 
-
-def background_correction(t,rate,edges,degree = 50,plot_save = None):
+def background_correction(t,rate,edges,backgroundsize = 10,degree = 5,plot_save = None):
 	'''
 	
 	:param t:
@@ -27,7 +27,15 @@ def background_correction(t,rate,edges,degree = 50,plot_save = None):
 	binsize1 = sort_binsize[0]
 	n = 1
 	for i in range(1,len(sort_binsize)):
-		if confidence_analysis(mean1,sigma1,binsize1,sort_re_rate[i],sort_sigma[i],sort_binsize[i],dt,degree):
+		if binsize1>backgroundsize:
+			binsize1_ = backgroundsize
+		else:
+			binsize1_ = binsize1
+		if sort_binsize[i] > backgroundsize:
+			sort_binsizei_ = backgroundsize
+		else:
+			sort_binsizei_ = sort_binsize[i]
+		if confidence_analysis(mean1,sigma1,binsize1_,sort_re_rate[i],sort_sigma[i],sort_binsizei_,dt,degree) and len(t[sort_index_list[i]])>0:
 			n = n+1
 			correction_t.append(t[sort_index_list[i]][0])
 			correction_t.append(t[sort_index_list[i]][-1])
@@ -78,7 +86,8 @@ def get_SNR(edges,re_rate,background_mean,background_sigma,dt,non_negative = Tru
 	sigma = background_sigma * np.sqrt(dt/binsize)
 	SNR = (re_rate - background_mean)/sigma
 	if non_negative:
-		SNR[SNR<0] = 0 #we only care about the part where the SNR is greater than 0.
+		if len(SNR[SNR<0])>0:
+			SNR[SNR<0] = 0 #we only care about the part where the SNR is greater than 0.
 	return SNR
 
 def re_histogram(t,rate,edges):
@@ -90,16 +99,27 @@ def re_histogram(t,rate,edges):
 	:param edges: the new bin-edges, whose interval can different from each other.
 	:return: three array ,The rebined rate and sigma of each bins.
 	'''
+
+
+	re_rate = np.zeros(len(edges)-1)
+	re_sigma = np.zeros(len(edges)-1)
 	
+	index_list = []
+	
+	strat = edges[:-1]
+	stop = edges[1:]
+	for i in range(len(strat)):
+		indexs = np.where((t>=strat[i])&(t<stop[i]))[0]
+		index_list.append(indexs)
+	'''
 	index = np.where(t >= edges[0])[0]
 	t = t[index]
 	rate = rate[index]
-	re_rate = np.zeros(len(edges)-1)
-	re_sigma = np.zeros(len(edges)-1)
 	edges_num = 1
-	index_list = []
 	ones = []
 	for index1,value in enumerate(t):
+		
+		
 		if value > edges[edges_num] or value == t[-1]:
 			ones.append(index1)
 			index_list.append(ones)
@@ -109,14 +129,24 @@ def re_histogram(t,rate,edges):
 				break
 		else:
 			ones.append(index1)
+	'''
 	for index1,value in enumerate(index_list):
 		one_rate = rate[value]
-		index_list[index1] = np.array(value)+index[0]
-		re_rate[index1] = one_rate.mean()
-		if len(one_rate) == 1:
-			re_sigma[index1] = one_rate.std(ddof = 0)
+		index_list[index1] = value#+index[0]
+		if len(one_rate) > 0:
+			re_rate[index1] = one_rate.mean()
+			if len(one_rate) == 1:
+				re_sigma[index1] = one_rate.std(ddof=0)
+			else:
+				re_sigma[index1] = one_rate.std(ddof=1)
 		else:
-			re_sigma[index1] = one_rate.std(ddof = 1)
+			if index1 == len(index_list)-1:
+				re_rate[index1] = re_rate[index1-1]
+				re_sigma[index1] = re_sigma[index1-1]
+			else:
+				re_rate[index1] = 0
+				re_sigma[index1] = 1
+				
 	return re_rate,re_sigma,np.array(index_list)
 
 def confidence_analysis(mean1,sigma1,T1,mean2,sigma2,T2,dt,degree = 3):
@@ -201,6 +231,7 @@ def get_bayesian_duration(data,sigma = 5):
 				start_tag = False
 	if start_tag:
 		start_edges.pop()
+	print(start_edges)
 	if start_edges[0] == binstart[0]:
 		start_edges = start_edges[1:]
 		stop_edges = stop_edges[1:]
@@ -255,12 +286,227 @@ def get_bayesian_flash(data,start_edges,stop_edges):
 			
 			if len(indexj) >= 3:
 				for ij in indexj:
-					flash_start.append(edg_stop[ij])#the cafe stop edge is the start edge of a flash.
-					flash_stop.append(edg_star[ij])#the cafe start edge is the stop edge of a flash.
+					flash_start.append(edg_stop[ij])  #the cafe stop edge is the start edge of a flash.
+					flash_stop.append(edg_star[ij])   #the cafe start edge is the stop edge of a flash.
 		flash_stop.append(stop_edges[i])
 	return np.array(flash_start),np.array(flash_stop)
 	
+def get_bayesian_txx(data,t_start,t_stop,txx = 0.9,it = 1000,lamd = 100.):
+	'''
 	
+	:param data:
+	:param t_start:
+	:param t_stop:
+	:param txx:
+	:param it:
+	:param lamd:
+	:return:
+	'''
 	
-		
+	t,rate = data['lc']
+	re_rate = data['re_hist'][0]
+	dt = t[1]-t[0]
+	n = rate*dt
+	n_err = np.sqrt(n)
+	txx = 1.-txx
+	part_n = len(t_start)
+	w = np.ones(len(t))
+	for ij in range(len(t_start)):
+		index_w = np.where((t>=t_start[ij])&(t<=t_stop[ij]))[0]
+		w[index_w] = 0
+	sigma = np.std(n[w > 0.5])
+	bs1 = WhittakerSmooth(n, w, lamd)
+	cs1 = n - bs1
+	cs_f = np.cumsum(cs1)
+	w1 = np.ones(len(cs_f))
+	cs_fit = WhittakerSmooth(cs_f, w1, 1)
+	#durti = t_stop-t_start
+	ns = 3*sigma#*durti
+	duration = t_stop - t_start
+	index_sort = np.argsort(duration)[0]
 
+
+	if len(np.where((t>=t_start[index_sort]) & (t<= t_stop[index_sort]))[0])<1000:#这里是为了提高精度
+		d_t = (t_stop[index_sort]-t_start[index_sort])/1000
+		print('dt for interp:',d_t)
+		t_l = np.arange(t[0], t[-1]+d_t, d_t)
+		cs_ff = np.interp(t_l, t, cs_fit)
+	else:
+		t_l = t
+		cs_ff = cs_fit
+	csf_fit_list = [0]
+	for i in range(part_n):
+		if(i < part_n-1):
+			cs1_fit_max = np.mean(cs_f[np.where((t>t_stop[i])&(t<t_start[i+1]))[0]])
+			csf_fit_list.append(cs1_fit_max)
+		else:
+			cs1_fit_max = np.mean(cs_f[np.where(t > t_stop[i])[0]])
+			csf_fit_list.append(cs1_fit_max)
+	csf_fit_list = np.array(csf_fit_list)
+	dcsf_fit_list = csf_fit_list[1:]-csf_fit_list[:-1]
+	t90 = []
+	index_i = []
+	t1 = []
+	t2 = []
+	l1 = []
+	l2 = []
+
+	for index,dcsf in enumerate(dcsf_fit_list):
+		if dcsf > ns:
+			dd = txx * dcsf
+			l1i = dd + csf_fit_list[index]
+			l2i = csf_fit_list[index+1] - dd
+			t90i, t1i, t2i = found_txx(t_l, cs_ff, l1i, l2i,csf_fit_list[index+1])
+			t90.append(t90i)
+			t1.append(t1i)
+			t2.append(t2i)
+			l1.append(l1i)
+			l2.append(l2i)
+			index_i.append(index)
+	fit_max = csf_fit_list[index_i+[index_i[-1]+1]]
+	if len(t90)<1:
+		return {'good':False}
+
+	t90_list = []
+	t1_list = []
+	t2_list = []
+	bs_list = []
+	index_list = []
+	nnn = 0
+
+	while nnn < it:
+		try:
+			
+			bin_ratexx = n + n_err * np.random.randn(len(n_err))
+			bs11 = WhittakerSmooth(bin_ratexx, w, lamd)
+
+			cs11 = bin_ratexx - bs11
+			cs11_f = np.cumsum(cs11)
+			cs11_fit = WhittakerSmooth(cs11_f, w1, 1)
+
+
+			cs_ff1 = np.interp(t_l, t, cs11_fit)
+
+			csf_fit_list1 = [0]
+
+			for i in range(part_n):
+				if (i < part_n - 1):
+					cs1_fit_max = np.mean(cs11_f[np.where((t > t_stop[i]) & (t < t_start[i + 1]))[0]])
+					csf_fit_list1.append(cs1_fit_max)
+				else:
+					cs1_fit_max = np.mean(cs11_f[np.where(t > t_stop[i])[0]])
+					csf_fit_list1.append(cs1_fit_max)
+			csf_fit_list1 = np.array(csf_fit_list1)
+
+			dcsf_fit_list1 = csf_fit_list1[1:] - csf_fit_list1[:-1]
+			pp = 0
+			for index, dcsf in enumerate(dcsf_fit_list1):
+				if index in index_i:
+					
+					if dcsf > ns:
+
+						#print(dcsf,ns)
+						dd = txx * dcsf
+						l11 = dd + csf_fit_list1[index]
+						l21 = csf_fit_list1[index + 1] - dd
+						t90i, t1i, t2i = found_txx(t_l, cs_ff1, l11, l21,csf_fit_list1[index + 1])
+						if 3*t90[index]>10:
+							bb = 3*t90[index]
+						else:
+							bb = 10
+						t1_range1 = t_start[index]-bb
+						t1_range2 = t_start[index]+bb
+						t2_range1 = t_stop[index]-bb
+						t2_range2 = t_stop[index]+bb
+						
+						if index <len(t_start)-1:
+							if t1_range2>t_start[index+1]:
+								t1_range2 = t_start[index+1]
+							if t2_range2>t_start[index+1]:
+								t2_range2 = t_start[index+1]
+						if(index>0):
+							if t1_range1<t_stop[index-1]:
+								t1_range1 = t_stop[index-1]
+							if t2_range1<t_stop[index-1]:
+								t2_range1 = t_stop[index-1]
+						#print(t1_range1,t1_range2,t2_range1,t2_range2)
+						if ((t1i < t1_range2 and t1i > t1_range1) and (t2i > t2_range1 and t2i<t2_range2)):
+
+							t90_list.append(t90i)
+							t1_list.append(t1i)
+							t2_list.append(t2i)
+							index_list.append(index)
+							pp = pp + 1
+
+			if pp > 0:
+				print(nnn,end = '\r')
+				bs_list.append(bs11)
+				nnn = nnn + 1
+
+		except:
+			continue
+	t90_list = np.array(t90_list)
+	t1_list = np.array(t1_list)
+	t2_list = np.array(t2_list)
+	index_list = np.array(index_list)
+
+	new_t90_list = []
+	new_t1_list = []
+	new_t2_list = []
+	t90_err1 = []
+	t90_err2 = []
+	t1_err1 = []
+	t1_err2 = []
+	t2_err1 = []
+	t2_err2 = []
+	for index,i in enumerate(index_i):
+		i_index = np.where(index_list == i)
+		t90_mean = np.mean(t90_list[i_index])
+		t90_err = np.std(t90_list[i_index])
+		t90_err1i = t90[index] - t90_mean + t90_err
+		t90_err2i = t90_mean + t90_err - t90[index]
+		t90_err1.append(t90_err1i)
+		t90_err2.append(t90_err2i)
+		t1_mean = np.mean(t1_list[i_index])
+		t2_mean = np.mean(t2_list[i_index])
+
+		t1_err = np.std(t1_list[i_index])
+		t2_err = np.std(t2_list[i_index])
+
+		t1_err1i = t1[index] - t1_mean + t1_err
+		t1_err2i = t1_mean + t1_err - t1[index]
+		t1_err1.append(t1_err1i)
+		t1_err2.append(t1_err2i)
+		t2_err1i = t2[index] - t2_mean + t2_err
+		t2_err2i = t2_mean + t2_err - t2[index]
+		t2_err1.append(t2_err1i)
+		t2_err2.append(t2_err2i)
+
+		new_t90_list.append(t90_list[i_index])
+		new_t1_list.append(t1_list[i_index])
+		new_t2_list.append(t2_list[i_index])
+
+	result = {'good':True,'t_c':t,'rate':rate,'sigma':data['bkg'][2],'bs':WhittakerSmooth(rate,w,lambda_=lamd/dt),'bayesian_edges':[data['edges']],
+	          'bayesian_rate':[np.concatenate((re_rate[:1], re_rate))],
+		  'txx':t90,'txx_err':[t90_err1,t90_err2],
+		  't1':t1,'t2':t2,'t1_err':[t1_err1,t1_err2],'t2_err':[t2_err1,t2_err2],
+		  'txx_list':new_t90_list,'t1_list':new_t1_list,'t2_list':new_t2_list,
+		  'cs_f_max':fit_max,'cs_f':cs_f,
+		  't':t,'n':n,'bs_list':bs_list,'bs1':bs1,
+		  'l':[l1,l2]}
+	return result
+
+def found_txx(t,v,st1,st2,base2):
+	t1 = []
+	for i in range(len(t)):
+		if v[i] >= st1:
+			if v[i] >= st2:
+				if v[i]>base2:
+					break
+			else:
+				t1.append(t[i])
+
+		else:
+			t1 = []
+	t90 = t1[-1]-t1[0]
+	return t90,t1[0],t1[-1]
