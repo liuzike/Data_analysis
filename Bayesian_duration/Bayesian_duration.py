@@ -305,15 +305,15 @@ def get_bayesian_txx(data,t_start,t_stop,txx = 0.9,it = 400,lamd = 100.):
 	'''
 	
 	dt = data['dt']
-	lamd = lamd / dt**1.5
+	lamd = lamd / dt**2
 	t,rate = data['lc']
 	re_rate = data['re_hist'][0]
 	n = rate*dt
 	n_err = np.sqrt(n)
-	tmin_ = t_start[0]-10#------------------
+	tmin_ = t_start[0]-5#------------------
 	if tmin_<t[0]:
 		tmin_ = t[0]
-	tmax_ = t_stop[-1]+10#------------------
+	tmax_ = t_stop[-1]+5#------------------
 	if tmax_>t[-1]:
 		tmax_ = t[-1]
 	data_index = np.where((t>=tmin_)&(t<=tmax_))[0]
@@ -533,7 +533,7 @@ def get_bayesian_txx(data,t_start,t_stop,txx = 0.9,it = 400,lamd = 100.):
 		  'txx':t90,'txx_err':[t90_err1,t90_err2],
 		  't1':t1,'t2':t2,'t1_err':[t1_err1,t1_err2],'t2_err':[t2_err1,t2_err2],
 		  'txx_list':new_t90_list,'t1_list':new_t1_list,'t2_list':new_t2_list,
-		  'cs_f_max':fit_max,'cs_f':cs_f,
+		  'cs_f_max':fit_max,'cs_f':cs_f,'xx':str(int(100*txx)),
 		  't':t,'n':n,'bs_list':bs_list,'bs1':bs1,
 		  'l':[l1,l2]}
 	return result
