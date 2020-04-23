@@ -524,8 +524,10 @@ def get_bayesian_txx(data,t_start,t_stop,txx = 0.9,it = 400,lamd = 100.):
 			t2_err2i = 0
 		t2_err1.append(t2_err1i)
 		t2_err2.append(t2_err2i)
+		new_t90_list.append(t90_list[i_index])
+		new_t1_list.append(t1_list[i_index])
 		new_t2_list.append(t2_list[i_index])
-
+		
 	result = {'good':True,'t_c':t,'rate':rate,'sigma':data['bkg'][2],'bs':WhittakerSmooth(rate,w,lambda_=lamd/dt),'bayesian_edges':[data['edges']],
 	          'bayesian_rate':[np.concatenate((re_rate[:1], re_rate))],
 		  'txx':t90,'txx_err':[t90_err1,t90_err2],
