@@ -220,7 +220,8 @@ def get_bayesian_duration(data,sigma = 5):
 				start_edges.append(binstart[index])
 				start_tag = True
 			else:
-				stop_edges.pop()
+				if len(stop_edges)>0:
+					stop_edges.pop()
 				start_tag = True
 				
 			
