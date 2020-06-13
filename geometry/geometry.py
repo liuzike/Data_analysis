@@ -217,7 +217,7 @@ class Geometry(object):
 	def detector_plot(self,radius = 10.0,source=None,points = None,good = False,projection = 'moll',
 	                  lat_0 = 0,lon_0 = 180,ax = None,show_bodies = False,
 	                  style = 'A',index = None):
-		pole = SkyCoord([0, 0], [90, -90], frame='icrs', unit='deg')
+		#pole = SkyCoord([0, 0], [90, -90], frame='icrs', unit='deg')
 		if ax is None:
 			fig = plt.figure(figsize = (20,10))
 			ax = fig.add_subplot(1,1,1)
@@ -776,9 +776,9 @@ def get_poly(position, radius, x, y, lon_0,map_,facecolor='coral', edgecolor='co
 			#print('len(x[x > xx_dd]) > len(x[x <= xx_dd])')
 			if len(x[x <= xx_dd]) > 0:
 				#print('len(x[x <= xx_dd]) > 0')
-				# x大于xx_dd
+				
 				for i in range(len(x)):
-					# x小于xx_dd一律等于xx_dd+0.1
+					
 					if x[i] <= xx_dd:
 						x_1.append(xx_dd + 0.1)
 						y_1.append(y[i])
@@ -790,7 +790,7 @@ def get_poly(position, radius, x, y, lon_0,map_,facecolor='coral', edgecolor='co
 				amax = aa.max()
 				amin = aa.min()
 				for i in range(len(x)):
-					# x大于xx_dd一律等于xx_dd-0.1
+					
 					if x[i] >= xx_dd:
 						x_2.append(xx_dd - 0.1)
 						if y[i] > amax:
@@ -817,7 +817,7 @@ def get_poly(position, radius, x, y, lon_0,map_,facecolor='coral', edgecolor='co
 			#print('len(x[x > xx_dd]) > len(x[x <= xx_dd]) else')
 			if len(x[x > xx_dd]) > 0:
 				#print('len(x[x > xx_dd]) > 0')
-				# 小于xx_dd为主
+				
 				for i in range(len(x)):
 					if x[i] >= xx_dd:
 						x_1.append(xx_dd - 0.1)

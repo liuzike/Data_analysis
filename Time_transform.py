@@ -1,7 +1,6 @@
 '''
-utc 与仪器时间的转化
+utc and instrument time conversion
 
-Time 里面有gps项，其中包括闰秒。所以这里的代码可以简化。
 '''
 
 from astropy.time import Time

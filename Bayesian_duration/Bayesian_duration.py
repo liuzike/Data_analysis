@@ -342,7 +342,7 @@ def get_bayesian_txx(data,t_start,t_stop,txx = 0.9,it = 400,lamd = 100.):
 	index_sort = np.argsort(duration)[0]
 
 
-	if len(np.where((t>=t_start[index_sort]) & (t<= t_stop[index_sort]))[0])<100:#这里是为了提高精度
+	if len(np.where((t>=t_start[index_sort]) & (t<= t_stop[index_sort]))[0])<100:
 		d_t = (t_stop[index_sort]-t_start[index_sort])/100
 		print('dt for interp:',d_t)
 		t_l = np.arange(tmin_, tmax_ + d_t, d_t)
