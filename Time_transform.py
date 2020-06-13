@@ -3,6 +3,7 @@ utc 与仪器时间的转化
 
 Time 里面有gps项，其中包括闰秒。所以这里的代码可以简化。
 '''
+
 from astropy.time import Time
 import numpy as np
 
@@ -18,7 +19,7 @@ class Clock(object):
 		                            51179.0,53736.0,54832.0,56109.0,57204.0,57754.0])
 		
 		if time_origin is None:
-			self.time_origin = 51910 + 0.0007428703703
+			self.time_origin = 51910 #+ 0.0007428703703
 		elif isinstance(time_origin, str):
 			self.time_origin = Time(time_origin).mjd
 		else:
