@@ -176,12 +176,13 @@ def get_bayesian_duration(data,sigma = 5):
 	:param sigma:
 	:return:
 	'''
-	start = 0
-	stop = 0
+	#start = 0
+	#stop = 0
 	pulse = 1
 	cafe = 2
 	fringe_up = 3
 	fringe_down = 4
+	fringe = 5
 	#t,rate = data['lc']
 	edges = data['edges']
 	re_rate,re_sigma,index_list = data['re_hist']
@@ -194,45 +195,53 @@ def get_bayesian_duration(data,sigma = 5):
 	trait = []
 	for index1,hight in enumerate(re_rate):
 		if (index1 == 0):
-			trait.append(start)
+			if hight > re_rate[index1+1]:
+				trait.append(fringe_down)
+			else:
+				trait.append(cafe)
+			
 		elif (index1 == len(re_rate)-1):
-			trait.append(stop)
+			
+			if hight > re_rate[index1-1]:
+				trait.append(fringe_up)
+			else:
+				trait.append(cafe)
+				
 		else:
 			if (hight> re_rate[index1-1]) and (hight > re_rate[index1+1]):
 				trait.append(pulse)
 			elif (hight <= re_rate[index1-1]) and (hight <= re_rate[index1+1]):
 				trait.append(cafe)
-			elif (hight < re_rate[index1-1]) and (hight >= re_rate[index1+1]):
+			elif (hight < re_rate[index1-1]) and (hight > re_rate[index1+1]):
 				trait.append(fringe_down)
-			elif (hight >= re_rate[index1-1]) and (hight < re_rate[index1+1]):
+			elif (hight > re_rate[index1-1]) and (hight < re_rate[index1+1]):
 				trait.append(fringe_up)
 			else:
-				trait.append(cafe)
+				trait.append(fringe)
 	start_tag = False
 	start_edges = []
 	stop_edges = []
-	
+	good_edges = []
 	for index,value in enumerate(trait):
 
-		if (SNR[index]>sigma) and (start_tag == False):
+		if (SNR[index]>sigma) and (start_tag == False):#get start
 			
-			if value != fringe_down:
-				start_edges.append(binstart[index])
-				start_tag = True
-			else:
-				if len(stop_edges)>0:
-					stop_edges.pop()
+			if (value != fringe_down)and(value != cafe):
+				good_edges.append(binstart[index])
+				#start_edges.append(binstart[index])
 				start_tag = True
 				
+		elif (SNR[index] <= sigma) and start_tag:#get stop
 			
-		elif (SNR[index] <= sigma) and start_tag:
-			
-			if value != fringe_up:
-				stop_edges.append(binstart[index])
+			if (value != fringe_up)and(value != pulse):
+				good_edges.append(binstart[index])
+				#stop_edges.append(binstart[index])
 				start_tag = False
-	if start_tag:
-		if len(start_edges)>0:
-			start_edges.pop()
+				if len(good_edges)==2:
+					start_edges.append(min(good_edges))
+					stop_edges.append(max(good_edges))
+					good_edges = []
+	
 	#print(start_edges)
 	if len(start_edges)>0:
 		if start_edges[0] == binstart[0]:

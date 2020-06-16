@@ -4,6 +4,7 @@ import numpy as np
 from astropy.coordinates import cartesian_to_spherical,SkyCoord,spherical_to_cartesian
 from scipy.interpolate import interp1d
 import  astropy.units as u
+
 class Detectors(object):
 	def __init__(self,local_az=None,local_zen = None,local_vector =None,
 	             name_list = None,color_list = None,effective_angle = None):
