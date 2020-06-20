@@ -169,7 +169,7 @@ def confidence_analysis(mean1,sigma1,T1,mean2,sigma2,T2,dt,degree = 3):
 	return (mean1>=mean2-degree*sigma2_1)&(mean1<=mean2+degree*sigma2_1)&(mean2>=mean1-degree*sigma1_2)&(mean2<=mean1+degree*sigma1_2)
 
 
-def get_bayesian_duration(data,sigma = 5):
+def get_bayesian_duration(data,sigma = 5,max_snr=False):
 	'''
 	
 	:param data: the result from background_correction()
@@ -191,7 +191,8 @@ def get_bayesian_duration(data,sigma = 5):
 	SNR = get_SNR(edges,re_rate,bkg,bkgsigma,dt,non_negative=True)
 	
 	binstart = edges[:-1]
-	#binstop = edges[1:]
+	binstop = edges[1:]
+	center = 0.5*(binstart+binstop)
 	trait = []
 	for index1,hight in enumerate(re_rate):
 		if (index1 == 0):
@@ -247,7 +248,16 @@ def get_bayesian_duration(data,sigma = 5):
 		if start_edges[0] == binstart[0]:
 			start_edges = start_edges[1:]
 			stop_edges = stop_edges[1:]
-	return np.array(start_edges),np.array(stop_edges)
+	if max_snr:
+		max_snr_list = []
+		for i in range(len(start_edges)):
+			indexi = np.where((center>=start_edges[i])&(center<=stop_edges[i]))[0]
+			snri = SNR[indexi]
+			max_snr_list.append(snri.max())
+			
+		return np.array(start_edges),np.array(stop_edges),np.array(max_snr_list)
+	else:
+		return np.array(start_edges),np.array(stop_edges)
 
 def get_bayesian_flash(data,start_edges,stop_edges):
 	'''
