@@ -2,6 +2,9 @@
 import numpy as np
 from scipy.sparse import csc_matrix,eye,diags
 from scipy.sparse.linalg import spsolve
+import operator
+from scipy import stats
+from astropy.stats import sigma_clip,mad_std
 
 def WhittakerSmooth(x,w,lambda_):
 	'''
@@ -23,6 +26,31 @@ def WhittakerSmooth(x,w,lambda_):
 	background=spsolve(A,B)
 
 	return np.array(background)
+
+def get_w(cs,sigma):
+	return np.exp(-0.5/(sigma**2)*(cs)**2)
+
+def TD_bs(t,rate,it = 1,lambda_=4000,sigma = False):
+	dt = t[1]-t[0]
+	t_c,cs,bs = TD_baseline(t,rate)
+	mask = sigma_clip(cs, sigma=5, maxiters=5, stdfunc=mad_std).mask
+	myfilter = list(map(operator.not_, mask))
+	lc_median_part = cs[myfilter]
+	loc, scale = stats.norm.fit(lc_median_part)
+	for i in range(it):
+		w = get_w(cs,scale)
+		bs = WhittakerSmooth(rate,w,lambda_=lambda_/dt**1.5)
+		cs = rate - bs
+		mask = sigma_clip(cs, sigma=5, maxiters=5, stdfunc=mad_std).mask
+		myfilter = list(map(operator.not_, mask))
+		lc_median_part = cs[myfilter]
+		loc, scale = stats.norm.fit(lc_median_part)
+		
+	if sigma:
+		return cs,bs,scale
+	else:
+		return cs,bs
+
 
 def TD_baseline(time,rate,lam = None,hwi = None,it = None,inti = None):
 	'''
