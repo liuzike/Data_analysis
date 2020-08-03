@@ -30,14 +30,14 @@ def WhittakerSmooth(x,w,lambda_):
 def get_w(cs,sigma):
 	return np.exp(-0.5/(sigma**2)*(cs)**2)
 
-def TD_bs(t,rate,it = 1,lambda_=4000,sigma = False):
+def TD_bs(t,rate,it_ = 1,lambda_=4000,sigma = False,hwi = None,it = None,inti = None):
 	dt = t[1]-t[0]
-	t_c,cs,bs = TD_baseline(t,rate)
+	t_c,cs,bs = TD_baseline(t,rate,hwi = hwi,it = it ,inti =inti)
 	mask = sigma_clip(cs, sigma=5, maxiters=5, stdfunc=mad_std).mask
 	myfilter = list(map(operator.not_, mask))
 	lc_median_part = cs[myfilter]
 	loc, scale = stats.norm.fit(lc_median_part)
-	for i in range(it):
+	for i in range(it_):
 		w = get_w(cs,scale)
 		bs = WhittakerSmooth(rate,w,lambda_=lambda_/dt**1.5)
 		cs = rate - bs
@@ -70,6 +70,8 @@ def TD_baseline(time,rate,lam = None,hwi = None,it = None,inti = None):
 		lam = lam/dt**1.5
 	if(hwi is None):
 		hwi = int(20/dt)
+	else:
+		hwi = int(hwi/dt)
 	if(it is None):
 		it = 5
 	if(inti is None):
