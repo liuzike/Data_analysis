@@ -80,7 +80,7 @@ class Geometry(object):
 			else:
 				self.pos_unit = u.m
 		if self.sc_pos is not None and self.met_time is not None:
-			if len(self.met_time)>1:
+			if len(self.met_time)>1 and len(self.sc_pos[:,0])>1:
 				
 				x = self.sc_pos[:,0]
 				y = self.sc_pos[:,1]
@@ -327,40 +327,40 @@ class Geometry(object):
 	def detector_plot(self,radius = 10.0,source=None,points = None,good = False,highlight = None,
 	                  highlight_color = '#f26522',
 	                  lon_0 = 180,ax = None,show_bodies = False,avoid_pole = True,time =None,
-	                  style = 'A',index = 0):
+	                  style = 'A',index = 0,size = 1):
 		#pole = SkyCoord([0, 0], [90, -90], frame='icrs', unit='deg')
 		if ax is None:
 			fig = plt.figure(figsize = (20,10))
 			ax = fig.add_subplot(1,1,1,projection=ccrs.Mollweide(central_longitude=lon_0),facecolor = '#f6f5ec')
 			
-			xticks = list(range(-180, 180, 30))
-			yticks = list(range(-90, 90, 15))
+		xticks = list(range(-180, 180, 30))
+		yticks = list(range(-90, 90, 15))
 			
-			lons_x = np.arange(0,360,30)
-			lons_y = np.zeros(lons_x.size)
-			lats_y = np.arange(-75,76,15)
-			lats_x = np.zeros(lats_y.size)
+		lons_x = np.arange(0,360,30)
+		lons_y = np.zeros(lons_x.size)
+		lats_y = np.arange(-75,76,15)
+		lats_x = np.zeros(lats_y.size)
 			
-			ax.gridlines(xlocs=xticks, ylocs=yticks)
-			lats_y_ticke = ax.projection.transform_points(ccrs.Geodetic(),lats_x+lon_0+180.0, lats_y*1.1)
-			lats_y_x = lats_y_ticke[:,0]*0.86
-			lats_y_y = lats_y_ticke[:,1]
+		ax.gridlines(xlocs=xticks, ylocs=yticks)
+		lats_y_ticke = ax.projection.transform_points(ccrs.Geodetic(),lats_x+lon_0+180.0, lats_y*1.1)
+		lats_y_x = lats_y_ticke[:,0]*0.86
+		lats_y_y = lats_y_ticke[:,1]
 			
-			proj_xyz = ax.projection.transform_points(ccrs.Geodetic(),np.array([0,30]), np.array([0,0]))
-			dx_ = np.abs(proj_xyz[0][0]-proj_xyz[1][0])
-			for indexi,i in enumerate(lons_x):
-				ax.text(i,lons_y[indexi],r'$%d^{\circ}$'%i,transform = ccrs.Geodetic(),size = 20)
-			for indexi,i in enumerate(lats_y):
-				ax.text(lats_y_x[indexi]+dx_,lats_y_y[indexi],r'$%d^{\circ}$'%i,size = 20,ha = 'right',va = 'center')
-			ax.set_global()
-			ax.invert_xaxis()
+		proj_xyz = ax.projection.transform_points(ccrs.Geodetic(),np.array([0,30]), np.array([0,0]))
+		dx_ = np.abs(proj_xyz[0][0]-proj_xyz[1][0])
+		for indexi,i in enumerate(lons_x):
+			ax.text(i,lons_y[indexi],r'$%d^{\circ}$'%i,transform = ccrs.Geodetic(),size = 20*size)
+		for indexi,i in enumerate(lats_y):
+			ax.text(lats_y_x[indexi]+dx_,lats_y_y[indexi],r'$%d^{\circ}$'%i,size = 20*size,ha = 'right',va = 'center')
+		ax.set_global()
+		ax.invert_xaxis()
 			
 			
 		if time is not None:
 			utc = self.Time_transition.met_to_utc(time)
-			ax.set_title(str(utc.fits))
+			ax.set_title(str(utc.fits),size = 20*size)
 		else:
-			ax.set_title(str(index))
+			ax.set_title(str(index),size = 20*size)
 			
 		if good and source :
 			if time is not None and self.met_time is not None:
@@ -389,7 +389,7 @@ class Geometry(object):
 			#print(lat)
 			#ax.plot( lon, lat,'-',color = 'k',transform=ccrs.Geodetic(),linewidth=5)
 			earth = Polygon(list(zip(lon, lat))[::-1], facecolor='#90d7ec', edgecolor='#90d7ec',
-			                linewidth=2, alpha=1,transform=ccrs.Geodetic())
+			                linewidth=2*size, alpha=1,transform=ccrs.Geodetic())
 			ax.add_patch(earth)
 			#ax.add_patch(mpatches.Circle(xy=[postion.ra.value,postion.dec.value],transform=ccrs.Geodetic(), radius=r, color='#90d7ec', alpha=1, zorder=0))
 			if self.time is not None:
@@ -418,8 +418,8 @@ class Geometry(object):
 				moon_point = SkyCoord(moon_ra, moon_dec, frame='icrs', unit='deg')
 				
 				#moon_ra, moon_dec = map(moon_point.ra.deg, moon_point.dec.deg)
-				ax.plot(moon_point.ra.deg, moon_point.dec.deg, 'o', color='#72777b', markersize=20,transform=ccrs.Geodetic())
-				ax.text(moon_point.ra.deg, moon_point.dec.deg, 'moon', size=20,transform=ccrs.Geodetic(),va = 'center',ha='center')
+				ax.plot(moon_point.ra.deg, moon_point.dec.deg, 'o', color='#72777b', markersize=20*size,transform=ccrs.Geodetic())
+				ax.text(moon_point.ra.deg, moon_point.dec.deg, 'moon', size=20*size,transform=ccrs.Geodetic(),va = 'center',ha='center')
 			if show_bodies and self.time is not None:
 				if time is not None:
 					time_utc = self.Time_transition.met_to_utc(time)
@@ -427,8 +427,8 @@ class Geometry(object):
 				else:
 					tmp_sun = get_sun(self.time[index])
 				sun_position = SkyCoord(tmp_sun.ra.deg, tmp_sun.dec.deg, unit='deg', frame='icrs')
-				ax.plot(sun_position.ra.value, sun_position.dec.value, 'o', color='#ffd400', markersize=40,transform=ccrs.Geodetic())
-				ax.text(sun_position.ra.value, sun_position.dec.value, 'sun', size=20,transform=ccrs.Geodetic(),va = 'center',ha='center')
+				ax.plot(sun_position.ra.value, sun_position.dec.value, 'o', color='#ffd400', markersize=40*size,transform=ccrs.Geodetic())
+				ax.text(sun_position.ra.value, sun_position.dec.value, 'sun', size=20*size,transform=ccrs.Geodetic(),va = 'center',ha='center')
 		
 		fovs = self.get_fov(centor, radius)
 		
@@ -446,15 +446,15 @@ class Geometry(object):
 					color_ = self.detectors.color_list[v]
 			else:
 				color_ = self.detectors.color_list[v]
-			detec = Polygon(list(zip(ra,dec))[::-1],facecolor=color_,edgecolor=color_,linewidth=2, alpha=0.5,transform=ccrs.Geodetic())
+			detec = Polygon(list(zip(ra,dec))[::-1],facecolor=color_,edgecolor=color_,linewidth=2*size, alpha=0.5,transform=ccrs.Geodetic())
 			ax.add_patch(detec)
-			plt.text(centor[i].ra.value, centor[i].dec.value,str(name_), color=self.detectors.color_list[v], size=22,transform=ccrs.Geodetic(),va = 'center',ha='center')
+			plt.text(centor[i].ra.value, centor[i].dec.value,str(name_), color=self.detectors.color_list[v], size=22*size,transform=ccrs.Geodetic(),va = 'center',ha='center')
 		
 		if source:
-			ax.plot(source.ra.value, source.dec.value, '*', color='#f36c21', markersize=20.,transform=ccrs.Geodetic())
+			ax.plot(source.ra.value, source.dec.value, '*', color='#f36c21', markersize=20.*size,transform=ccrs.Geodetic())
 		if points:
 			
-			ax.plot(points.ra.value, points.dec.value, '*', color='#c7a252', markersize=20.,transform=ccrs.Geodetic())
+			ax.plot(points.ra.value, points.dec.value, '*', color='#c7a252', markersize=20.*size,transform=ccrs.Geodetic())
 			
 		return ax
 		
