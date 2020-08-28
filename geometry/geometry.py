@@ -49,8 +49,10 @@ class Geometry(object):
 			try:
 				self.met_time = quaternion['SCLK_UTC'].values
 				self.time = self.Time_transition.batch_met_to_utc(self.met_time)
+				self.time_band = [np.min(self.met_time),np.max(self.met_time)]
 			except:
 				self.met_time = None
+				self.time_band = None
 				self.time = None
 			try:
 				if pos_unit is not None:
@@ -67,12 +69,15 @@ class Geometry(object):
 				if (isinstance(time, str)):
 					self.met_time = self.Time_transition.utc_to_met(time)
 					self.time = Time(time)
+					self.time_band = None
 				else:
 					self.met_time = time
+					self.time_band = [np.min(self.met_time),np.max(self.met_time)]
 					self.time = self.Time_transition.batch_met_to_utc(time)
 			else:
 				self.met_time = None
 				self.time = None
+				self.time_band = None
 			self.sc_pos = sc_pos
 			if pos_unit is not None:
 				self.pos_unit = pos_unit
@@ -85,6 +90,8 @@ class Geometry(object):
 				x = self.sc_pos[:,0]
 				y = self.sc_pos[:,1]
 				z = self.sc_pos[:,2]
+				print('me_time\n',self.met_time)
+				print('x\n',x)
 				x_f = interp1d(self.met_time,-x,kind = 'quadratic')
 				y_f = interp1d(self.met_time,-y,kind = 'quadratic')
 				z_f = interp1d(self.met_time,-z,kind = 'quadratic')
@@ -102,12 +109,23 @@ class Geometry(object):
 	def get_detector_centers_with_time(self,t):
 		deter_name = self.detectors.name_list
 		center_f = self.detectors.center_function
-		if center_f is not None:
+		if center_f is not None and self.time_band is not None:
 			ra_t_all = []
 			dec_t_all = []
 			index_all = []
 			try:
+				
 				n_=len(t)
+				t = np.array(t)
+				tband = t.max()-t.min()
+				tband_sl = self.time_band[1] - self.time_band[0]
+				if tband<=tband_sl+3:
+					t[t<=self.time_band[0]] = self.time_band[0]+0.00001
+					t[t>=self.time_band[1]] = self.time_band[1]-0.00001
+				else:
+					t[t<=self.time_band[0]] = np.nan
+					t[t>=self.time_band[1]] = np.nan
+				
 				for index_,deteri in enumerate(deter_name):
 					index_all.append(index_)
 					xf,yf,zf = center_f[deteri]
@@ -163,8 +181,18 @@ class Geometry(object):
 	def get_separation_with_time(self,t,source):
 		deter_name = self.detectors.name_list
 		center_f = self.detectors.center_function
-		if center_f is not None:
+		if center_f is not None and self.time_band is not None:
 			retr = {'time':t}
+			t = np.array(t)
+			if t.size >0:
+				tband = t.max()-t.min()
+				tband_sl = self.time_band[1] - self.time_band[0]
+				if tband<=tband_sl+3:
+					t[t<=self.time_band[0]] = self.time_band[0]+0.00001
+					t[t>=self.time_band[1]] = self.time_band[1]-0.00001
+				else:
+					t[t<=self.time_band[0]] = np.nan
+					t[t>=self.time_band[1]] = np.nan
 			for deteri in deter_name:
 				xf,yf,zf = center_f[deteri]
 				x = xf(t)
@@ -274,13 +302,23 @@ class Geometry(object):
 	def get_earth_point_with_time(self,t):
 		
 		earth_radius = 6371. * u.km
-		if self.sc_pos_f is not None:
+		if self.sc_pos_f is not None and self.time_band is not None:
 			x_f, y_f, z_f = self.sc_pos_f
-			x = x_f(t) * self.pos_unit
-			y = y_f(t) * self.pos_unit
-			z = z_f(t) * self.pos_unit
 			try:
 				n = len(t)
+				t = np.array(t)
+				tband = t.max() - t.min()
+				tband_sl = self.time_band[1] - self.time_band[0]
+				if tband <= tband_sl + 3:
+					t[t <= self.time_band[0]] = self.time_band[0] + 0.00001
+					t[t >= self.time_band[1]] = self.time_band[1] - 0.00001
+				else:
+					t[t <= self.time_band[0]] = np.nan
+					t[t >= self.time_band[1]] = np.nan
+					
+				x = x_f(t) * self.pos_unit
+				y = y_f(t) * self.pos_unit
+				z = z_f(t) * self.pos_unit
 				earth_point_list = []
 				for i in range(n):
 					position = cartesian_to_spherical(x[i],y[i],z[i])
@@ -292,6 +330,9 @@ class Geometry(object):
 					earth_point_list.append([xyz_position,radius_deg,x_,y_])
 				return earth_point_list
 			except 	(TypeError):
+				x = x_f(t) * self.pos_unit
+				y = y_f(t) * self.pos_unit
+				z = z_f(t) * self.pos_unit
 				position = cartesian_to_spherical(x,y,z)
 				xyz_position = SkyCoord(position[2].deg,position[1].deg,frame='icrs',unit='deg')
 				fermi_radius = np.sqrt(x**2 + y**2 + z**2)
