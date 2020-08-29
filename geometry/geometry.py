@@ -119,7 +119,7 @@ class Geometry(object):
 				t = np.array(t)
 				tband = t.max()-t.min()
 				tband_sl = self.time_band[1] - self.time_band[0]
-				if tband<=tband_sl+3:
+				if tband<=tband_sl+2:
 					t[t<=self.time_band[0]] = self.time_band[0]+0.00001
 					t[t>=self.time_band[1]] = self.time_band[1]-0.00001
 				else:
@@ -142,6 +142,17 @@ class Geometry(object):
 				center = SkyCoord(ra = ra_t_all,dec = dec_t_all,frame='icrs', unit='deg')
 				return center,[index_all]*n_
 			except (TypeError):
+				
+				if (t<=self.time_band[0]):
+					if (self.time_band[0]-t<=1):
+						t = self.time_band[0]+0.00001
+					else:
+						t = np.nan
+				if t>=self.time_band[1]:
+					if (t-self.time_band[0]<=1):
+						t = self.time_band[1]-0.00001
+					else:
+						t = np.nan
 				for index_,deteri in enumerate(deter_name):
 					index_all.append(index_)
 					xf,yf,zf = center_f[deteri]
@@ -187,7 +198,7 @@ class Geometry(object):
 			if t.size >0:
 				tband = t.max()-t.min()
 				tband_sl = self.time_band[1] - self.time_band[0]
-				if tband<=tband_sl+3:
+				if tband<=tband_sl+2:
 					t[t<=self.time_band[0]] = self.time_band[0]+0.00001
 					t[t>=self.time_band[1]] = self.time_band[1]-0.00001
 				else:
@@ -309,7 +320,7 @@ class Geometry(object):
 				t = np.array(t)
 				tband = t.max() - t.min()
 				tband_sl = self.time_band[1] - self.time_band[0]
-				if tband <= tband_sl + 3:
+				if tband <= tband_sl + 2:
 					t[t <= self.time_band[0]] = self.time_band[0] + 0.00001
 					t[t >= self.time_band[1]] = self.time_band[1] - 0.00001
 				else:
@@ -330,6 +341,17 @@ class Geometry(object):
 					earth_point_list.append([xyz_position,radius_deg,x_,y_])
 				return earth_point_list
 			except 	(TypeError):
+				
+				if (t<=self.time_band[0]):
+					if (self.time_band[0]-t<=1):
+						t = self.time_band[0]+0.00001
+					else:
+						t = np.nan
+				if t>=self.time_band[1]:
+					if (t-self.time_band[0]<=1):
+						t = self.time_band[1]-0.00001
+					else:
+						t = np.nan
 				x = x_f(t) * self.pos_unit
 				y = y_f(t) * self.pos_unit
 				z = z_f(t) * self.pos_unit
