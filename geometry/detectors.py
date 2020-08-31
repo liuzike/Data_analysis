@@ -112,9 +112,12 @@ class Detectors(object):
 			ra_list.append(list(ra))
 			dec_list.append(list(dec))
 			if self.time is not None and len(self.time)>1:
-				x_f = interp1d(self.time,position_array[0],kind = 'quadratic')
-				y_f = interp1d(self.time,position_array[1],kind = 'quadratic')
-				z_f = interp1d(self.time,position_array[2],kind = 'quadratic')
+				new_t = self.time
+				new_t[0] = new_t[0]-1
+				new_t[-1] = new_t[-1]+1
+				x_f = interp1d(new_t,position_array[0],kind = 'quadratic')
+				y_f = interp1d(new_t,position_array[1],kind = 'quadratic')
+				z_f = interp1d(new_t,position_array[2],kind = 'quadratic')
 				#ra_f = interp1d(self.time, ra, kind='slinear')
 				#dec_f = interp1d(self.time, dec, kind='slinear')
 				# ra_f = interp1d(self.time,ra,kind = 'cubic')

@@ -91,10 +91,13 @@ class Geometry(object):
 				y = self.sc_pos[:,1]
 				z = self.sc_pos[:,2]
 				print('me_time\n',self.met_time)
+				new_t = self.met_time
+				new_t[0] = new_t[0]-1
+				new_t[-1] = new_t[-1]+1
 				print('x\n',x)
-				x_f = interp1d(self.met_time,-x,kind = 'quadratic')
-				y_f = interp1d(self.met_time,-y,kind = 'quadratic')
-				z_f = interp1d(self.met_time,-z,kind = 'quadratic')
+				x_f = interp1d(new_t,-x,kind = 'quadratic')
+				y_f = interp1d(new_t,-y,kind = 'quadratic')
+				z_f = interp1d(new_t,-z,kind = 'quadratic')
 				self.sc_pos_f = [x_f,y_f,z_f]
 			else:
 				self.sc_pos_f = None
@@ -468,6 +471,18 @@ class Geometry(object):
 				r_e_m = moon_r - earth_r
 				
 				if time is not None:
+					if time <=self.time_band[0]:
+						if self.time_band[0]-time<=1:
+							time = self.time_band[0]+0.00001
+						else:
+							print(time,self.time_band)
+							time = np.nan
+					if time >= self.time_band[1]:
+						if time - self.time_band[1] <=1:
+							time =  self.time_band[1]-0.00001
+						else:
+							print(time,self.time_band)
+							time = np.nan
 					x_f, y_f, z_f = self.sc_pos_f
 					x = x_f(time)
 					y = y_f(time)
