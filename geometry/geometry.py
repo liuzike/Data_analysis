@@ -90,11 +90,11 @@ class Geometry(object):
 				x = self.sc_pos[:,0]
 				y = self.sc_pos[:,1]
 				z = self.sc_pos[:,2]
-				print('me_time\n',self.met_time)
+				#print('me_time\n',self.met_time)
 				new_t = self.met_time
 				new_t[0] = new_t[0]-1
 				new_t[-1] = new_t[-1]+1
-				print('x\n',x)
+				#print('x\n',x)
 				x_f = interp1d(new_t,-x,kind = 'quadratic')
 				y_f = interp1d(new_t,-y,kind = 'quadratic')
 				z_f = interp1d(new_t,-z,kind = 'quadratic')
