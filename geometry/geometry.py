@@ -408,7 +408,7 @@ class Geometry(object):
 		lats_x = np.zeros(lats_y.size)
 			
 		ax.gridlines(xlocs=xticks, ylocs=yticks)
-		lats_y_ticke = ax.projection.transform_points(ccrs.Geodetic(),lats_x+lon_0+180.0, lats_y*1.1)
+		lats_y_ticke = ax.projection.transform_points(ccrs.Geodetic(),lats_x+lon_0+179.99, lats_y*1.1)
 		lats_y_x = lats_y_ticke[:,0]*0.86
 		lats_y_y = lats_y_ticke[:,1]
 			
