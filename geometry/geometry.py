@@ -48,7 +48,7 @@ class Geometry(object):
 			self.quaternion = quaternion[['QSJ_1', 'QSJ_2', 'QSJ_3', 'QSJ_4']].values
 			try:
 				self.met_time = quaternion['SCLK_UTC'].values
-				self.time = self.Time_transition.batch_met_to_utc(self.met_time)
+				self.time = self.Time_transition.met_to_utc(self.met_time)
 				self.time_band = [np.min(self.met_time),np.max(self.met_time)]
 			except:
 				self.met_time = None
@@ -73,7 +73,7 @@ class Geometry(object):
 				else:
 					self.met_time = time
 					self.time_band = [np.min(self.met_time),np.max(self.met_time)]
-					self.time = self.Time_transition.batch_met_to_utc(time)
+					self.time = self.Time_transition.met_to_utc(time)
 			else:
 				self.met_time = None
 				self.time = None
