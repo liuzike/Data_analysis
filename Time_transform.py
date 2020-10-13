@@ -24,7 +24,7 @@ class Clock(object):
 		if isinstance(utc,Time):
 			gps = utc.gps
 		else:
-			gps = Time(utc,format = format,scale = scale)
+			gps = Time(utc,format = format,scale = scale).gps
 		return gps - self.time_origin_gps
 	def met_to_utc(self,met):
 
