@@ -325,7 +325,7 @@ class Geometry(object):
 				if n == 0:
 					return []
 				t = np.array(t)
-				print('t',t)
+				#print('t',t)
 				tband = t.max() - t.min()
 				tband_sl = self.time_band[1] - self.time_band[0]
 				if tband <= tband_sl + 2:
