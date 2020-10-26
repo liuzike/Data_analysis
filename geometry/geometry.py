@@ -119,6 +119,8 @@ class Geometry(object):
 			try:
 				
 				n_=len(t)
+				if n_== 0:
+					return SkyCoord(ra = [],dec = [],frame='icrs', unit='deg'),[]
 				t = np.array(t)
 				tband = t.max()-t.min()
 				tband_sl = self.time_band[1] - self.time_band[0]
@@ -320,7 +322,10 @@ class Geometry(object):
 			x_f, y_f, z_f = self.sc_pos_f
 			try:
 				n = len(t)
+				if n == 0:
+					return []
 				t = np.array(t)
+				print('t',t)
 				tband = t.max() - t.min()
 				tband_sl = self.time_band[1] - self.time_band[0]
 				if tband <= tband_sl + 2:
